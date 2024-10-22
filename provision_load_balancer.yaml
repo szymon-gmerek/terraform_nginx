@@ -1,0 +1,41 @@
+# Create target group for load balancer
+resource "aws_lb_target_group" "candidate013" {
+  name     = "candidate013"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = "vpc-0d51a0a757f221020" 
+}
+
+# Register EC2 instances with the target group
+resource "aws_lb_target_group_attachment" "recngx01" {
+  target_group_arn = aws_lb_target_group.candidate013.arn
+  target_id        = aws_instance.recngx01.id
+  port             = 80
+}
+
+resource "aws_lb_target_group_attachment" "recngx02" {
+  target_group_arn = aws_lb_target_group.candidate013.arn
+  target_id        = aws_instance.recngx02.id
+  port             = 80
+}
+
+# Create Application Load Balancer
+resource "aws_lb" "candidate013_lb" {
+  name               = "candidate013-lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = ["sg-08eb59cf2f1dcb86f"]
+  subnets            = ["subnet-0ddb08fb3793be7f5","subnet-0cfcafb5557a906dc"] 
+}
+
+# Create listener for the load balancer 
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.candidate013_lb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.candidate013.arn
+  }
+}
